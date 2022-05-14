@@ -55,21 +55,24 @@ async function run() {
         const available = service.slots.filter(s =>!booked.includes(s))
         service.available =available
        
-      }); */ 
+      }); */
 
       // step 3
-      services.forEach(service => {
+      services.forEach((service) => {
         //step 4: find booking for that service . output : [{}, {}, {}, {}]
-        const serviceBookings= bookings.filter(book => book.treatment === service.name)
+        const serviceBookings = bookings.filter(
+          (book) => book.treatment === service.name
+        );
         // step 5: select slots for the service bookings: ["", "", "", ""]
-        const bookedSlots = serviceBookings.map(book=> book.slot)
+        const bookedSlots = serviceBookings.map((book) => book.slot);
         // step 6: select those slotes that are not in bookedSlots
-        const available = service.slots.filter(slot => !bookedSlots.includes(slot))
+        const available = service.slots.filter(
+          (slot) => !bookedSlots.includes(slot)
+        );
         //step 7:set available to slots to make it esier
 
-
-        service.slots = available
-      })
+        service.slots = available;
+      });
 
       res.send(services);
     });
@@ -83,7 +86,14 @@ async function run() {
      * app.post('/booking/:id)
      * app.post('/booking/:id)
      
-    */
+    **/
+
+    app.get("/booking", async (req, res) => {
+      const patient = req.query.patient;
+      const query = { patient: patient };
+      const bookings = await bookingCollection.find(query).toArray();
+      res.send(bookings)
+    });
 
     app.post("/booking", async (req, res) => {
       const booking = req.body;
