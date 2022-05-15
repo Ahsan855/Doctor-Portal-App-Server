@@ -1,8 +1,9 @@
 const express = require("express");
-const app = express();
+const cors = require("cors");
+const jwt = require('jsonwebtoken')
 require("dotenv").config();
 const { MongoClient, ServerApiVersion } = require("mongodb");
-const cors = require("cors");
+const app = express();
 const port = process.env.PORT || 5000;
 
 // middle ware
@@ -15,6 +16,7 @@ const client = new MongoClient(uri, {
   useUnifiedTopology: true,
   serverApi: ServerApiVersion.v1,
 });
+ 
 
 async function run() {
   try {
@@ -35,17 +37,20 @@ async function run() {
       res.send(services);
     });
 
-    app.put('/user/:email', async(req, res)=>{
-      const email =req.params.email 
-      const user =req.body
-      const filter ={email:email}
-      const options = {upsert: true}
+    // update document
+    app.put("/user/:email", async (req, res) => {
+      const email = req.params.email;
+      const user = req.body;
+      const filter = { email: email };
+      const options = { upsert: true };
       const updateDoc = {
         $set: user,
-      }
-      const result = await userCollection.updateOne(filter, updateDoc, options)
-      res.send(result)
-    })
+      };
+      const result = await userCollection.updateOne(filter, updateDoc, options);
+      const token =jwt.sign({email:email}, process.env.ACCESS_TOKEN_SECRET , {expiresIn: '1h'})
+      console.log(token);
+      res.send({result , token});
+    });
 
     // This is not the proper way to query.
     //After learning more about mongodb . use aggregate lookup , pipeline
@@ -94,9 +99,8 @@ async function run() {
      * APi Naming Convention 
      * app.get('/booking') //get all booking in this collection . or get more than one or by filte
      * app.get('/booking') // get a specific booking
-     * app.get('/booking') // add a new booking
      * app.post('/booking) //add a new booking
-     * app.post('/booking/:id) upsert ==> update (if exists) or insert (if doen't exist)
+     * app.put('/booking/:id) upsert ==> update (if exists) or insert (if doen't exist)
      * app.patch('/booking/:id)
      * app.delete('/booking/:id)
      
@@ -104,6 +108,8 @@ async function run() {
 
     app.get("/booking", async (req, res) => {
       const patient = req.query.patient;
+      const authorization = req.headers.authorization
+      console.log("auth header" , authorization);
       const query = { patient: patient };
       const bookings = await bookingCollection.find(query).toArray();
       res.send(bookings);
